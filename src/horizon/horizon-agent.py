@@ -25,6 +25,15 @@ class Horizon():
         self.pidfile_path = settings.PID_PATH + '/horizon.pid'
         self.pidfile_timeout = 5
 
+
+    def setup_pickle_ports(self):
+        """
+        Set up as many pickle ports as we need, with port numbers counting up from the PICKLE_PORT for each
+        """
+        for pp in xrange(settings.PICKLE_PORT_COUNT):
+            Listen(settings.PICKLE_PORT+pp, listen_queue, pid, type="pickle").start()
+
+
     def run(self):
         logger.info('starting horizon agent')
         listen_queue = Queue(maxsize=settings.MAX_QUEUE_SIZE)
@@ -44,7 +53,10 @@ class Horizon():
                 Worker(listen_queue, pid, skip_mini).start()
 
         # Start the listeners
-        Listen(settings.PICKLE_PORT, listen_queue, pid, type="pickle").start()
+
+        ##Rich mod - we now need many pickle ports
+        #Listen(settings.PICKLE_PORT, listen_queue, pid, type="pickle").start()
+        self.setup_pickle_ports()
         Listen(settings.UDP_PORT, listen_queue, pid, type="udp").start()
 
         # Start the roomba
